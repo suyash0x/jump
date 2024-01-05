@@ -17,6 +17,11 @@ func getHomDir() (homeDir string, err error) {
 	return
 }
 
+func isPathExists(path string) bool {
+	_, err := os.Stat(path)
+	return os.IsNotExist(err)
+}
+
 const jsonFileName = "targets.json"
 
 func jsnFilePath() (path string) {
@@ -28,38 +33,34 @@ func jsnFilePath() (path string) {
 	configPath := filepath.Join(homeDir, configDir)
 	jumpDirPath := filepath.Join(configPath, jumpDir)
 
-	_, err = os.Stat(configPath)
-	if os.IsNotExist(err) {
-		err = os.Mkdir(jumpDirPath, os.FileMode(0755))
+	configNotExists := isPathExists(configPath)
+
+	if configNotExists {
+		err = os.Mkdir(configPath, os.FileMode(0755))
 		FatalOutError(err)
 	}
 
-	_, err = os.Stat(jumpDirPath)
+	jumpNotExists := isPathExists(jumpDirPath)
 
-	if os.IsNotExist(err) {
+	if jumpNotExists {
 		err = os.Mkdir(jumpDirPath, os.FileMode(0755))
 		FatalOutError(err)
 	}
 
 	path = filepath.Join(jumpDirPath, jsonFileName)
 
-	_, err = os.Stat(path)
+	jsonNotExists := isPathExists(path)
 
-	if os.IsNotExist(err) {
+	if jsonNotExists {
 		initial := JumpTargets{
 			Targets: make(map[string]string),
 		}
-
 		jsonContent, err := json.MarshalIndent(initial, "", "  ")
 		FatalOutError(err)
-
 		file, err := os.Create(path)
 		FatalOutError(err)
-
 		defer file.Close()
-
 		_, err = file.Write(jsonContent)
-
 		FatalOutError(err)
 	}
 
